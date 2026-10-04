@@ -44,7 +44,14 @@ class PdlReceiver:
         self.on_in_order: list[Callable[[Packet], None]] = []
 
     def receive_data(self, pkt: Packet) -> None:
+        # `dup` marks a PSN the receiver already delivered; `accepted` marks one it took
+        # into its Rx buffer. Both matter: metrics must not count either as new data.
+        dup = pkt.psn < self.rcv_nxt
         ooo = pkt.psn != self.rcv_nxt
+        off = pkt.psn - self.rcv_nxt
+        in_window = not dup and off < BITMAP_BITS
+        already = dup or pkt.psn in self.buffered
+        accepted = in_window and not already
         self.sim.bus.emit(
             "pkt_recv",
             conn=self.conn,
@@ -52,13 +59,15 @@ class PdlReceiver:
             psn=pkt.psn,
             ooo=ooo,
             kind=pkt.kind,
+            dup=dup or already,
+            accepted=accepted,
             is_response=self.is_response,
         )
-        if pkt.psn < self.rcv_nxt:
+        if dup:
+            # Re-ACK anyway: this is what lets RACK/TLP recover without a full RTO.
             self._send_ack(pkt)
             return
-        off = pkt.psn - self.rcv_nxt
-        if off >= BITMAP_BITS:
+        if not in_window:
             self._send_ack(pkt)
             return
         if pkt.psn not in self.buffered:
@@ -133,11 +142,12 @@ class PdlSender:
         self.snd_una = 0
         self.snd_nxt = 0
         self.outstanding: dict[int, Outstanding] = {}
-        self.app_queue: list[tuple[bytes, int | None, int]] = []
+        self.app_queue: list[tuple[bytes, int | None, int, dict]] = []
         self.finished = False
         self._tlp_gen = 0
         self._last_tlp_psn: int | None = None
         self.unacked_per_flow: dict[int, int] = {}
+        self._last_flow = 0
         self.on_acked: list[Callable] = []
 
     @property
@@ -146,8 +156,8 @@ class PdlSender:
             return self.get_policy()
         return self._policy
 
-    def enqueue(self, payload: bytes, rsn: int | None = None, flow: int = 0) -> None:
-        self.app_queue.append((payload, rsn, flow))
+    def enqueue(self, payload: bytes, rsn: int | None = None, flow: int = 0, extra: dict | None = None) -> None:
+        self.app_queue.append((payload, rsn, flow, extra or {}))
         self.try_send()
 
     def start_bulk(self, n: int) -> None:
@@ -165,19 +175,29 @@ class PdlSender:
             if self.n_packets is not None:
                 if self.snd_nxt >= self.n_packets:
                     break
-                payload, rsn, flow = b"x" * self.mtu, None, self._pick_flow()
+                payload, rsn, flow, extra = b"x" * self.mtu, None, self._pick_flow(), {}
             else:
                 if not self.app_queue:
                     break
-                payload, rsn, flow = self.app_queue.pop(0)
+                payload, rsn, flow, extra = self.app_queue.pop(0)
                 flow = self._pick_flow() if flow == 0 else flow
-            self._transmit(self.snd_nxt, payload, rsn, flow, retx=False)
+            self._transmit(self.snd_nxt, payload, rsn, flow, retx=False, extra=extra)
             self.snd_nxt += 1
             in_flight += 1
         self._arm_tlp()
 
     def _pick_flow(self) -> int:
+        """Flow-level scheduling (paper 4.3): pick by the policy's rule, not a hardcoded one.
+
+        Largest open window is the default -- `fcwnd_flow - unacked_flow` -- which sends on
+        whichever flow has the most room. Round-robin is the comparison case. The rule name
+        comes from `Policy` in `fae/`, so swapping schedulers does not touch this file.
+        """
         pol = self.policy
+        if not pol.fcwnd:
+            return 0
+        if pol.scheduler == "round_robin":
+            return self._rr_flow()
         best = 0
         best_open = -1.0
         for fid, fcwnd in pol.fcwnd.items():
@@ -188,12 +208,30 @@ class PdlSender:
                 best = fid
         return best
 
+    def _rr_flow(self) -> int:
+        """Next flow in id order after the last one used."""
+        flow_ids = sorted(self.policy.fcwnd)
+        if not flow_ids:
+            return 0
+        last = self._last_flow
+        self._last_flow = flow_ids[0] if last == flow_ids[-1] else flow_ids[flow_ids.index(last) + 1]
+        return self._last_flow
+
     def _path_for(self, flow: int) -> Path:
         if self.get_path:
             return self.get_path(flow)
         return self.data_path
 
-    def _transmit(self, psn: int, payload: bytes, rsn: int | None, flow: int, retx: bool, probe: bool = False) -> None:
+    def _transmit(
+        self,
+        psn: int,
+        payload: bytes,
+        rsn: int | None,
+        flow: int,
+        retx: bool,
+        probe: bool = False,
+        extra: dict | None = None,
+    ) -> None:
         now = self.sim.now()
         pkt = Packet(
             conn=self.conn,
@@ -207,6 +245,7 @@ class PdlSender:
             t1=now,
             orig_xmit_ts=now,
             is_response=self.is_response,
+            extra=dict(extra or {}),
         )
         if psn in self.outstanding:
             prev = self.outstanding[psn]

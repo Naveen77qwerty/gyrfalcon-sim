@@ -34,8 +34,9 @@ class Simulator:
     def stop(self) -> None:
         self.stopped = True
 
-    def run(self, until: float | None = None) -> None:
+    def run(self, until: float | None = None, max_events: int = 2_000_000) -> None:
         self.stopped = False
+        n = 0
         while self._heap and not self.stopped:
             t, seq, fn, args = heapq.heappop(self._heap)
             if until is not None and t > until:
@@ -44,3 +45,6 @@ class Simulator:
                 return
             self.clock.set(t)
             fn(*args)
+            n += 1
+            if n >= max_events:
+                return

@@ -47,6 +47,12 @@ class Path:
         self.slow_factor = factor
         self.sim.bus.emit("path_slow", conn=0, path=self.path_id, factor=factor)
 
+    def unslow(self) -> None:
+        """Counterpart to `slow`. Needed to show a congested receiver recovering, not just
+        degrading; without it a slow path can only ever be slowed further."""
+        self.slow_factor = 1.0
+        self.sim.bus.emit("path_slow", conn=0, path=self.path_id, factor=1.0)
+
     def revive(self) -> None:
         self.killed = False
         self.slow_factor = 1.0
@@ -72,6 +78,7 @@ class Path:
                 conn=conn,
                 flow=pkt.flow,
                 psn=pkt.psn,
+                kind=pkt.kind,
                 reason="path_killed",
                 path=self.path_id,
             )
@@ -86,6 +93,7 @@ class Path:
                 conn=conn,
                 flow=pkt.flow,
                 psn=pkt.psn,
+                kind=pkt.kind,
                 reason="random_loss",
                 path=self.path_id,
             )
@@ -110,6 +118,7 @@ class Path:
                 conn=pkt.conn,
                 flow=pkt.flow,
                 psn=pkt.psn,
+                kind=pkt.kind,
                 reason="path_killed",
                 path=self.path_id,
             )

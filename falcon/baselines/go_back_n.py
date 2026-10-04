@@ -71,10 +71,37 @@ class GoBackN:
         self._arm_rto()
 
     def _on_data(self, pkt: Packet) -> None:
+        # Go-Back-N receiver semantics: out-of-order packets are discarded, so only the
+        # in-order one counts as accepted. `accepted` lets metrics see that difference.
         ooo = pkt.psn != self.rcv_nxt
-        self.sim.bus.emit("pkt_recv", conn=self.conn, flow=0, psn=pkt.psn, ooo=ooo, kind="data")
-        if pkt.psn == self.rcv_nxt:
+        accepted = not ooo
+        self.sim.bus.emit(
+            "pkt_recv",
+            conn=self.conn,
+            flow=0,
+            psn=pkt.psn,
+            ooo=ooo,
+            kind="data",
+            dup=False,
+            accepted=accepted,
+            is_response=False,
+        )
+        if accepted:
             self.rcv_nxt += 1
+        # Go-Back-N has no SACK bitmap, so it acks the cumulative base only.
+        self.sim.bus.emit(
+            "ack_send",
+            conn=self.conn,
+            flow=0,
+            base_psn=self.rcv_nxt,
+            bitmap=0,
+            rx_buf=0.0,
+            # Delay measurement (t1..t3) is a Falcon-style mechanism; the baselines do not
+            # implement it, so the fields are present but null rather than absent.
+            t1=None,
+            t2=None,
+            t3=None,
+        )
         ack = Packet(conn=self.conn, psn=self.rcv_nxt, kind="ack", base_psn=self.rcv_nxt, size=64)
         self.ack_path.send(ack)
 

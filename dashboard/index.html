@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Falcon-style transport &mdash; event replay</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+  <h1>Falcon-style transport <span class="sub">event replay</span></h1>
+  <div class="controls">
+    <label class="file">
+      <input type="file" id="file" accept=".jsonl,.json,.txt" multiple>
+      <span>load event log(s)</span>
+    </label>
+    <button id="play" disabled>&#9654; play</button>
+    <button id="step" disabled>step</button>
+    <label class="speed">speed
+      <select id="speed" disabled>
+        <option value="0.25">0.25&times;</option>
+        <option value="1" selected>1&times;</option>
+        <option value="4">4&times;</option>
+        <option value="16">16&times;</option>
+      </select>
+    </label>
+    <input type="range" id="scrub" min="0" max="0" value="0" step="1" disabled>
+    <output id="clock">t = 0.000000 s</output>
+  </div>
+</header>
+
+<p class="disclaimer">
+  Falcon-<em>style</em> teaching implementation. Figures below are read straight from an event
+  log; they are not the paper's numbers and are not comparable to them.
+</p>
+
+<main>
+  <section class="panel" id="panel-conn">
+    <h2>Connection</h2>
+    <div id="conn-body" class="empty">No log loaded.</div>
+  </section>
+
+  <section class="panel wide" id="panel-ladder">
+    <h2>Packet ladder</h2>
+    <p class="hint">Sender left, receiver right. Dashed = retransmission, red cross = drop.</p>
+    <svg id="ladder" viewBox="0 0 1000 260" preserveAspectRatio="none"></svg>
+  </section>
+
+  <section class="panel" id="panel-loss">
+    <h2>Loss recovery</h2>
+    <p class="hint">Each cell is one PSN. Filled = received, ring = retransmitted, dot = timer fired.</p>
+    <div id="bitmap" class="empty">No log loaded.</div>
+  </section>
+
+  <section class="panel" id="panel-stats">
+    <h2>Stats</h2>
+    <div id="stat-cards"></div>
+    <svg id="charts" viewBox="0 0 1000 300" preserveAspectRatio="none"></svg>
+  </section>
+
+  <section class="panel wide" id="panel-res">
+    <h2>Resource pools</h2>
+    <p class="hint">Reservations and releases, with Xoff / Xon backpressure markers.</p>
+    <svg id="pools" viewBox="0 0 1000 220" preserveAspectRatio="none"></svg>
+  </section>
+
+  <section class="panel wide" id="panel-legend">
+    <h2>Event stream</h2>
+    <div id="stream"></div>
+  </section>
+</main>
+
+<script src="app.js"></script>
+</body>
+</html>

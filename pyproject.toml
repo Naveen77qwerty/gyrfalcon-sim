@@ -24,3 +24,6 @@ include = ["falcon*"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["."]
+markers = [
+    "slow: drives a real browser or a long simulation; deselect with -m 'not slow'",
+]

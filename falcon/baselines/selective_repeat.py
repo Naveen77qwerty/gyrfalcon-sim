@@ -61,7 +61,20 @@ class SelectiveRepeat:
 
     def _on_data(self, pkt: Packet) -> None:
         ooo = pkt.psn != self.rcv_nxt
-        self.sim.bus.emit("pkt_recv", conn=self.conn, flow=0, psn=pkt.psn, ooo=ooo, kind="data")
+        # Selective Repeat keeps every received PSN in rcv_buf, so membership is an
+        # exact duplicate check: both out-of-order buffering and re-delivery land here.
+        dup = pkt.psn in self.rcv_buf
+        self.sim.bus.emit(
+            "pkt_recv",
+            conn=self.conn,
+            flow=0,
+            psn=pkt.psn,
+            ooo=ooo,
+            kind="data",
+            dup=dup,
+            accepted=not dup,
+            is_response=False,
+        )
         self.rcv_buf.add(pkt.psn)
         while self.rcv_nxt in self.rcv_buf:
             self.rcv_nxt += 1
@@ -74,6 +87,11 @@ class SelectiveRepeat:
             base_psn=self.rcv_nxt,
             bitmap=0,
             rx_buf=0.0,
+            # Delay measurement (t1..t3) is a Falcon-style mechanism; the baselines
+            # do not implement it, so the fields are present but null rather than absent.
+            t1=None,
+            t2=None,
+            t3=None,
         )
         self.ack_path.send(ack)
         if ooo:
