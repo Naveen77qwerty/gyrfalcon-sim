@@ -13,7 +13,7 @@ paper, `docs/feature-matrix.md` says so and says why.
 
 ```bash
 python -m venv .venv && .venv/bin/pip install -e ".[dev]"
-make test          # 74 tests
+make test          # 75 tests
 make plots         # experiment plots -> results/
 make dashboard     # then open http://localhost:8000/
 ```
@@ -64,14 +64,20 @@ grep -rnP '[Pp]olicy\w*\.\w+\s*=(?!=)' --include='*.py' falcon/pdl falcon/tl
 Swap the congestion controller by naming it at construction. `pdl/` does not change:
 
 ```bash
-.venv/bin/python -c "
-from falcon.harness import run_bulk_multipath
-from falcon.metrics import metrics_from_events
-for algo in ('swift', 'aimd'):
-    sim = run_bulk_multipath(seed=3, n_packets=300, n_flows=2, algo=algo)
-    print(algo, metrics_from_events(sim.bus.events))
-"
+make cc-swap     # or: python experiments/cc_swap.py
 ```
+
+```
+same scenario, same seeds, same pdl/, path slowed 2x at t=0.0002:
+  swift  mean fcwnd   8.64   goodput   141.8 Mbps   delivered 235.2/400
+  aimd   mean fcwnd   7.32   goodput   459.1 Mbps   delivered 400.0/400
+```
+
+AIMD wins that race, and the result is reported rather than tuned around. With a constant
+propagation delay and no queueing fabric there is nothing for delay-based control to exploit,
+so its gentler back-off costs it throughput. The point being demonstrated is that the swap
+changes behaviour at all — on an *unimpaired* path both controllers only ever grow their
+window and come out identical, which is why the scenario slows the path.
 
 ## What the numbers look like
 
@@ -118,6 +124,7 @@ Each is one command, seeded, and writes a replayable event log to `results/demo/
 | `remote_disk_completion.png` | whether a lossy path corrupts a block read |
 | `multipath_recovery.png` | what a path failure costs |
 | `scheduler_policy.png` | largest-open-window vs round-robin |
+| `cc_swap_window.png` | Swift-style vs AIMD, same `pdl/` |
 | `host_congestion.png` | ncwnd falling and recovering as the receiver slows |
 
 ## How this is checked

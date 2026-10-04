@@ -48,12 +48,12 @@ must not be described as if it does.
 | Bulk transfer vs GBN / SR | full | |
 | Loss sweep, reorder sweep | full | multi-seed with 95% CIs |
 | Multipath recovery after a path kill | full | 120/120 delivered |
-| Scheduler policy comparison | full | |
-| CC swap comparison | full | |
+| Scheduler policy comparison | full | rule named in `Policy.scheduler` |
+| CC swap comparison | full | Swift vs AIMD diverge measurably on a slowed path; identical on an unimpaired one |
 | Host congestion / slow receiver | **simplified** | one slow-path factor; no per-queue NIC model |
 | Fabric topology, queues, ECMP | **not implemented** | paths are independent links with no shared queueing fabric |
 | NIC hardware, DMA, interrupts | **not implemented** | out of scope for a transport-level study |
-| Live dashboard / chaos UI | **not implemented** | `dashboard/` is empty; scenarios are run from `experiments/` |
+| Live dashboard / chaos UI | **simplified** | `dashboard/` replays a recorded log; no live WebSocket or sliders yet |
 
 ## Known measurement traps
 
@@ -72,3 +72,12 @@ quietly produce a wrong number again:
   timeline read back from the log.
 - **One seed is not a result.** Every sweep in `experiments/` runs five seeds and plots a
   confidence interval.
+- **A demo that changes nothing is worse than no demo.** Scenario C's path kill was originally
+  scheduled after the transfer had finished, so it dropped no packets and its log was identical
+  to the control. `tests/test_fae.py::test_a_path_kill_must_actually_cost_something` now fails if
+  the kill stops costing anything.
+- **ACKs and data share one PSN space in the log.** Matching packets by PSN alone makes a lost
+  ACK look like lost application data. `pkt_drop` carries `kind` for exactly this reason.
+- **Not connection-scoped events use `conn: 0`.** `path_kill` and `path_slow` do, so any consumer
+  that picks "the first connection" in a log containing them will pick a connection that never
+  sent anything.

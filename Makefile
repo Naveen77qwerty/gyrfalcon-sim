@@ -2,7 +2,7 @@ PY ?= .venv/bin/python
 NODE ?= node
 DEMO := results/demo
 
-.PHONY: help test test-fast plots demos demo-a demo-b demo-c demo-d dashboard check clean
+.PHONY: help test test-fast plots demos demo-a demo-b demo-c demo-d dashboard check clean cc-swap
 
 help:
 	@echo "make test        run the full suite (needs node + chrome for the render check)"
@@ -46,6 +46,9 @@ demo-d:
 dashboard:
 	@echo "open http://localhost:8000/ and load logs from $(DEMO)/"
 	@cd dashboard && $(PY) -m http.server 8000
+
+cc-swap:
+	$(PY) experiments/cc_swap.py
 
 check: test demos
 	$(NODE) scripts/render_check.js $(DEMO)/*.jsonl
