@@ -34,17 +34,40 @@ class Simulator:
     def stop(self) -> None:
         self.stopped = True
 
-    def run(self, until: float | None = None, max_events: int = 2_000_000) -> None:
-        self.stopped = False
+    @property
+    def pending(self) -> int:
+        """Events still queued. Lets a caller tell "idle" from "finished"."""
+        return len(self._heap)
+
+    @property
+    def finished(self) -> bool:
+        return not self._heap
+
+    def step(self, max_events: int = 1000, until: float | None = None) -> int:
+        """Run at most `max_events` queued events and return how many ran.
+
+        The live dashboard needs to advance the simulation in slices so it can ship events to
+        a socket in between. This is the same loop `run` uses, unchanged in ordering, RNG
+        consumption, and time setting -- slicing changes only how often control returns, so a
+        log from a stepped simulation is identical to one from an unstepped run of the same seed.
+        """
         n = 0
-        while self._heap and not self.stopped:
+        while self._heap and not self.stopped and n < max_events:
             t, seq, fn, args = heapq.heappop(self._heap)
             if until is not None and t > until:
                 heapq.heappush(self._heap, (t, seq, fn, args))
                 self.clock.set(until)
-                return
+                break
             self.clock.set(t)
             fn(*args)
             n += 1
-            if n >= max_events:
+        return n
+
+    def run(self, until: float | None = None, max_events: int = 2_000_000) -> None:
+        self.stopped = False
+        total = 0
+        while not self.stopped and total < max_events:
+            n = self.step(max_events - total, until=until)
+            total += n
+            if n == 0:
                 return

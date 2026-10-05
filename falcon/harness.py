@@ -1,4 +1,11 @@
-"""Shared bulk-transfer runner for GBN, SR, and Falcon-style PDL."""
+"""Shared bulk-transfer runner for GBN, SR, and Falcon-style PDL.
+
+Split into `build_*` (construct a session, schedule its first events, do not run) and
+`run_*` (build, then run to completion). Everything offline uses `run_*`; the live dashboard
+uses `build_*` so it can advance the simulation in slices and ship events between them. Both
+paths go through the same construction code, so a live log and an experiment log for the same
+seed are the same run.
+"""
 
 from __future__ import annotations
 
@@ -46,15 +53,20 @@ def make_paths(
     return fwd, rev
 
 
-def run_bulk(
+def build_bulk(
     transport: str,
     seed: int = 1,
     n_packets: int = 200,
     loss: float = 0.0,
     reorder: float = 0.0,
-    until: float = 1.0,
     policy: Policy | None = None,
-) -> Simulator:
+):
+    """Construct a single-path session and arm it. Does not run.
+
+    Returns `(sim, session, forwards, rev)`. `forwards` is returned rather than discovered by
+    walking attributes so a caller that wants to retune impairment mid-run has a real handle
+    on the path objects.
+    """
     sim = Simulator(seed=seed)
     fwd, rev = make_paths(sim, loss=loss, reorder=reorder)
     pol = policy or Policy()
@@ -67,33 +79,50 @@ def run_bulk(
     else:
         raise ValueError(transport)
     sess.start()
+    return sim, sess, [fwd], rev
+
+
+def run_bulk(
+    transport: str,
+    seed: int = 1,
+    n_packets: int = 200,
+    loss: float = 0.0,
+    reorder: float = 0.0,
+    until: float = 1.0,
+    policy: Policy | None = None,
+) -> Simulator:
+    sim, _sess, _forwards, _rev = build_bulk(
+        transport, seed=seed, n_packets=n_packets, loss=loss, reorder=reorder, policy=policy
+    )
     sim.run(until=until)
     return sim
 
 
-def run_bulk_multipath(
+def build_bulk_multipath(
     seed: int = 1,
     n_packets: int = 200,
     n_paths: int = 2,
     n_flows: int = 2,
     loss: float = 0.0,
     reorder: float = 0.0,
-    until: float = 1.0,
     algo: str = "swift",
+    scheduler: str = "largest_open",
     kill_path: int | None = None,
     kill_at: float = 0.001,
-    scheduler: str = "largest_open",
-) -> Simulator:
-    """Falcon-style over several parallel paths with a live FAE driving every parameter.
+    start: bool = True,
+):
+    """Construct a multipath Falcon-style session. Does not run.
 
-    `kill_path` drops that path mid-run; the FAE sees the `path_kill` event, repaths its
-    flows, and this harness resolves the new assignment through `get_path`. The PDL never
-    learns that the FAE exists -- it is handed a callable that maps flow -> Path.
+    The PDL is handed a callable that maps flow -> Path, so it never learns the FAE exists;
+    when the FAE repaths its flows mid-run the sender picks the new path up on its own.
+
+    Returns `(sim, session, forwards, rev)`.
     """
     sim = Simulator(seed=seed)
     path_ids = list(range(n_paths))
     forwards = [
-        Path(sim, name=f"fwd{pid}", delay=5e-5, loss=loss, reorder=reorder, bandwidth_bps=100e9 / n_paths, path_id=pid)
+        Path(sim, name=f"fwd{pid}", delay=5e-5, loss=loss, reorder=reorder,
+             bandwidth_bps=100e9 / n_paths, path_id=pid)
         for pid in path_ids
     ]
     rev = Path(sim, name="rev", delay=5e-5, loss=0.0, bandwidth_bps=100e9, path_id=100)
@@ -117,6 +146,34 @@ def run_bulk_multipath(
 
     if kill_path is not None:
         sim.schedule(kill_at, forwards[kill_path].kill)
-    sess.start()
+    if start:
+        sess.start()
+    return sim, sess, forwards, rev
+
+
+def run_bulk_multipath(
+    seed: int = 1,
+    n_packets: int = 200,
+    n_paths: int = 2,
+    n_flows: int = 2,
+    loss: float = 0.0,
+    reorder: float = 0.0,
+    until: float = 1.0,
+    algo: str = "swift",
+    kill_path: int | None = None,
+    kill_at: float = 0.001,
+    scheduler: str = "largest_open",
+) -> Simulator:
+    """Falcon-style over several parallel paths with a live FAE driving every parameter.
+
+    `kill_path` drops that path mid-run; the FAE sees the `path_kill` event, repaths its
+    flows, and this harness resolves the new assignment through `get_path`. The PDL never
+    learns that the FAE exists -- it is handed a callable that maps flow -> Path.
+    """
+    sim, _sess, _forwards, _rev = build_bulk_multipath(
+        seed=seed, n_packets=n_packets, n_paths=n_paths, n_flows=n_flows, loss=loss,
+        reorder=reorder, algo=algo, kill_path=kill_path, kill_at=kill_at,
+        scheduler=scheduler,
+    )
     sim.run(until=until)
     return sim

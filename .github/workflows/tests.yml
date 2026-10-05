@@ -41,3 +41,24 @@ jobs:
           pip install -e ".[dev]"
       - name: Test with a real browser
         run: python -m pytest -q -p no:cacheprovider tests/test_dashboard.py
+
+  # Live mode is the one path the unit tests cannot cover on their own: the simulator is stepped
+  # on a background thread and the events cross a real socket into a real browser. A regression
+  # there is silent -- a 403 handshake, or a reordered stream, produces no traceback anywhere.
+  # So this job stands the server up, drives it through Chrome, and tears it down.
+  live:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+      - name: Live dashboard check
+        run: make live-check

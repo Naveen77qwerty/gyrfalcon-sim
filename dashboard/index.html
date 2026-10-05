@@ -24,8 +24,33 @@
         <option value="16">16&times;</option>
       </select>
     </label>
-    <input type="range" id="scrub" min="0" max="0" value="0" step="1" disabled>
+    <label class="layout">view
+      <select id="layout" disabled>
+        <option value="1" selected>single</option>
+        <option value="2">side by side</option>
+      </select>
+    </label>
+    <input type="range" id="scrub" min="0" max="1000" value="0" step="1" disabled>
     <output id="clock">t = 0.000000 s</output>
+  </div>
+  <div class="controls second">
+    <label class="live">
+      <input type="checkbox" id="live-toggle">
+      <span>live mode</span>
+    </label>
+    <label class="chaos">loss <input type="range" id="loss" min="0" max="10" step="0.1" value="1"><output id="loss-out">1.0%</output></label>
+    <label class="chaos">reorder <input type="range" id="reorder" min="0" max="60" step="1" value="0"><output id="reorder-out">0%</output></label>
+    <label class="chaos">slow <input type="range" id="slow" min="1" max="20" step="1" value="1"><output id="slow-out">1&times;</output></label>
+    <label class="chaos">transport
+      <select id="transport">
+        <option value="falcon" selected>falcon-style</option>
+        <option value="gbn">go-back-n</option>
+        <option value="sr">selective repeat</option>
+      </select>
+    </label>
+    <button id="kill" disabled>kill a path</button>
+    <button id="live-restart" disabled>restart</button>
+    <span id="live-status" class="status">offline</span>
   </div>
 </header>
 
@@ -34,41 +59,50 @@
   log; they are not the paper's numbers and are not comparable to them.
 </p>
 
-<main>
-  <section class="panel" id="panel-conn">
-    <h2>Connection</h2>
-    <div id="conn-body" class="empty">No log loaded.</div>
-  </section>
+<!-- One side of the view. Cloned per layout so side-by-side comparison runs the same panels
+     twice against two logs. Elements are addressed by class within the clone, never by id,
+     because duplicated ids are invalid and would break lookup. -->
+<template id="side-template">
+  <div class="side">
+    <div class="side-head"><span class="side-name"></span><span class="side-meta"></span></div>
 
-  <section class="panel wide" id="panel-ladder">
-    <h2>Packet ladder</h2>
-    <p class="hint">Sender left, receiver right. Dashed = retransmission, red cross = drop.</p>
-    <svg id="ladder" viewBox="0 0 1000 260" preserveAspectRatio="none"></svg>
-  </section>
+    <section class="panel">
+      <h2>Connection</h2>
+      <div class="conn-body empty">No log loaded.</div>
+    </section>
 
-  <section class="panel" id="panel-loss">
-    <h2>Loss recovery</h2>
-    <p class="hint">Each cell is one PSN. Filled = received, ring = retransmitted, dot = timer fired.</p>
-    <div id="bitmap" class="empty">No log loaded.</div>
-  </section>
+    <section class="panel wide">
+      <h2>Packet ladder</h2>
+      <p class="hint">Sender left, receiver right. Dashed = retransmission, red cross = drop.</p>
+      <svg class="ladder" viewBox="0 0 1000 260" preserveAspectRatio="none"></svg>
+    </section>
 
-  <section class="panel" id="panel-stats">
-    <h2>Stats</h2>
-    <div id="stat-cards"></div>
-    <svg id="charts" viewBox="0 0 1000 300" preserveAspectRatio="none"></svg>
-  </section>
+    <section class="panel">
+      <h2>Loss recovery</h2>
+      <p class="hint">Each cell is one PSN. Filled = received, ring = retransmitted, dot = timer fired.</p>
+      <div class="bitmap empty">No log loaded.</div>
+    </section>
 
-  <section class="panel wide" id="panel-res">
-    <h2>Resource pools</h2>
-    <p class="hint">Reservations and releases, with Xoff / Xon backpressure markers.</p>
-    <svg id="pools" viewBox="0 0 1000 220" preserveAspectRatio="none"></svg>
-  </section>
+    <section class="panel">
+      <h2>Stats</h2>
+      <div class="stat-cards"></div>
+      <svg class="charts" viewBox="0 0 1000 300" preserveAspectRatio="none"></svg>
+    </section>
 
-  <section class="panel wide" id="panel-legend">
-    <h2>Event stream</h2>
-    <div id="stream"></div>
-  </section>
-</main>
+    <section class="panel wide">
+      <h2>Resource pools</h2>
+      <p class="hint">Reservations and releases, with Xoff / Xon backpressure markers.</p>
+      <svg class="pools" viewBox="0 0 1000 220" preserveAspectRatio="none"></svg>
+    </section>
+
+    <section class="panel wide">
+      <h2>Event stream</h2>
+      <div class="stream"></div>
+    </section>
+  </div>
+</template>
+
+<main id="stage"></main>
 
 <script src="app.js"></script>
 </body>
