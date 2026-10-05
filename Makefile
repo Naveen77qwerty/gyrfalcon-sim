@@ -80,3 +80,8 @@ check: test demos shots live-check
 clean:
 	rm -rf results/*.png results/*.jsonl results/demo results/shots .pytest_cache
 	find . -name __pycache__ -type d -prune -exec rm -rf {} +
+
+
+# Stretch: UDP/netem demo (requires root/tc on Linux)
+netem-demo:
+	@bash scripts/netem_demo.sh lo 1 5

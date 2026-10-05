@@ -53,7 +53,9 @@ must not be described as if it does.
 | Host congestion / slow receiver | **simplified** | one slow-path factor; no per-queue NIC model |
 | Fabric topology, queues, ECMP | **not implemented** | paths are independent links with no shared queueing fabric |
 | NIC hardware, DMA, interrupts | **not implemented** | out of scope for a transport-level study |
-| Live dashboard / chaos UI | **simplified** | `dashboard/` replays a recorded log; no live WebSocket or sliders yet |
+| Live dashboard / chaos UI | **simplified** | `dashboard/` replays a recorded log; WebSocket live mode and side-by-side implemented in code (FastAPI + dashboard) |
+
+| UDP backend (real sockets) | **stretch** | `falcon/net/udp_path.py` provides a UDP-backed Path preserving the same interface; `scripts/netem_demo.sh` and `falcon/udp_demo.py` provided as examples. State machines unchanged. |
 
 ## Known measurement traps
 

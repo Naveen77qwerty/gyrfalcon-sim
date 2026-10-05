@@ -12,13 +12,36 @@ paper, `docs/feature-matrix.md` says so and says why.
 ## Quickstart
 
 ```bash
-python -m venv .venv && .venv/bin/pip install -e ".[dev]"
-make test          # 75 tests
-make plots         # experiment plots -> results/
-make dashboard     # then open http://localhost:8000/
+# Setup
+python -m venv .venv && source .venv/bin/activate
+pip install -e ".[dev]"
+
+# Run tests
+make test          # 109 tests
+
+# Generate experiment plots
+make plots         # saves to results/
+
+# Run all demo scenarios
+make demos         # generates logs in results/demo/
+
+# Launch replay dashboard
+make dashboard     # open http://localhost:8000/
 ```
 
-Load any `.jsonl` file from `results/demo/` into the dashboard to replay it.
+Load any `.jsonl` file from `results/demo/` or `results/` into the dashboard to replay it.
+
+
+## What this does
+
+This is a discrete-event simulator of a Falcon-style reliable transport. It models an impaired network (delay, loss, reordering, bandwidth, path failures) and compares transports (Go-Back-N, Selective Repeat, Falcon-style). Key features:
+
+- **Pure mechanism vs policy split**: Protocol logic in `pdl/` and `tl/` never hardcodes congestion control, timeouts, or scheduling — all policy decisions come from `fae/` via injected `Policy` objects.
+- **Deterministic & replayable**: Same seed produces identical event logs (JSONL). Every measurement comes from replayable logs.
+- **Full observability**: Every state change emits a schema-conformant event (`docs/event-schema.md`). The dashboard replays these logs to visualize packet flows, losses, retransmissions, RACK/TLP firing, ACK bitmaps, resource pools, and FAE parameter changes.
+- **Multipath + CC swap**: Flows share PSN space with per-flow windows; you can swap congestion controllers (Swift-style vs AIMD) without touching mechanism code.
+- **Realistic workloads**: Includes bulk transfer, remote disk (4-16 KB reads, multi-chunk writes with integrity checks), and incast scenarios.
+- **Tested & reproducible**: 109 tests validate metrics semantics, event schema, mechanism/policy split, resource carving, and dashboard replay. Demos generate seeded logs for consistent presentations.
 
 ## The one idea worth stealing
 
@@ -113,6 +136,54 @@ Each is one command, seeded, and writes a replayable event log to `results/demo/
 | `make demo-b` | 40% reordering; SR's spurious retransmits vs Falcon-style's zero |
 | `make demo-c` | kill a path mid-transfer; the flow reroutes and the transfer still finishes |
 | `make demo-d` | 50 senders on one bottleneck; per-sender delivery spread |
+
+
+## How to run & showcase
+
+### Run demos (generate seeded replay logs)
+```bash
+make demo-a  # 1% loss: GBN vs Falcon-style (side-by-side)
+make demo-b  # 40% reordering: spurious retransmissions comparison
+make demo-c  # Path kill mid-transfer with flow rerouting
+make demo-d  # 50-sender incast with backpressure/fairness
+make demos   # All demos at once
+```
+Logs are saved to `results/demo/*.jsonl`. Each run is deterministic.
+
+### Visualize with the dashboard
+```bash
+make dashboard  # http://localhost:8000/
+```
+Load any JSONL log in the UI: packet ladder, ACK bitmap, connection/flow stats, resource pools, and parameter timeline. Use "side by side" to compare two runs with identical seeds.
+
+### Run experiments & generate plots
+```bash
+make plots  # loss/reorder/incast/remote_disk/multipath/scheduler/cc_swap/host_congestion
+ls results/*.png
+```
+
+### Swap congestion controllers (mechanism unchanged)
+```bash
+make cc-swap  # Swift-style vs AIMD on same scenario
+```
+
+### Run tests
+```bash
+make test        # All 109 tests
+make test-fast   # Skip slow tests
+```
+
+### Live mode (WebSocket)
+```bash
+make live        # Runs live server on port 8000 (or set LIVE_PORT)
+make live-check  # Smoke test of live endpoints
+```
+
+### UDP backend (stretch, Linux + tc)
+```bash
+make netem-demo  # Shows usage for tc netem (requires root)
+# See falcon/udp_demo.py and falcon/net/udp_path.py for example usage
+```
 
 ## Results
 
