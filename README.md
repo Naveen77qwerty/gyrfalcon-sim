@@ -31,7 +31,6 @@ make dashboard     # open http://localhost:8000/
 
 Load any `.jsonl` file from `results/demo/` or `results/` into the dashboard to replay it.
 
-
 ## What this does
 
 This is a discrete-event simulator of a Falcon-style reliable transport. It models an impaired network (delay, loss, reordering, bandwidth, path failures) and compares transports (Go-Back-N, Selective Repeat, Falcon-style). Key features:
@@ -109,18 +108,18 @@ simplified topology; useful for showing a *trend*, not for comparison with anyth
 
 At 1% loss, 200 packets (`results/loss_sweep.png`):
 
-| transport | retransmits | goodput |
-|---|---|---|
-| Go-Back-N | 64 | 1499 Mbps |
-| Falcon-style | 3 | 3424 Mbps |
+| transport    | retransmits | goodput   |
+| ------------ | ----------- | --------- |
+| Go-Back-N    | 64          | 1499 Mbps |
+| Falcon-style | 3           | 3424 Mbps |
 
 At 40% reordering (`results/reorder_sweep.png`) — the case the design is actually about:
 
-| transport | retransmits | spurious | goodput |
-|---|---|---|---|
-| Go-Back-N | 1710 | 0 | 58.7 Mbps |
-| Selective Repeat | 719 | 153 | 1090 Mbps |
-| Falcon-style | 74 | 0 | 1599 Mbps |
+| transport        | retransmits | spurious | goodput   |
+| ---------------- | ----------- | -------- | --------- |
+| Go-Back-N        | 1710        | 0        | 58.7 Mbps |
+| Selective Repeat | 719         | 153      | 1090 Mbps |
+| Falcon-style     | 74          | 0        | 1599 Mbps |
 
 GBN shows zero *spurious* retransmissions only because it retransmits everything on any
 reordering, which is worse: its retransmit count is 23× Falcon-style's while delivering the
@@ -130,17 +129,17 @@ same bytes. "Spurious" only means something next to how much you retransmit over
 
 Each is one command, seeded, and writes a replayable event log to `results/demo/`.
 
-| command | what it shows |
-|---|---|
-| `make demo-a` | 1% loss, GBN vs Falcon-style, side by side |
-| `make demo-b` | 40% reordering; SR's spurious retransmits vs Falcon-style's zero |
+| command         | what it shows                                                               |
+| --------------- | --------------------------------------------------------------------------- |
+| `make demo-a` | 1% loss, GBN vs Falcon-style, side by side                                  |
+| `make demo-b` | 40% reordering; SR's spurious retransmits vs Falcon-style's zero            |
 | `make demo-c` | kill a path mid-transfer; the flow reroutes and the transfer still finishes |
-| `make demo-d` | 50 senders on one bottleneck; per-sender delivery spread |
-
+| `make demo-d` | 50 senders on one bottleneck; per-sender delivery spread                    |
 
 ## How to run & showcase
 
 ### Run demos (generate seeded replay logs)
+
 ```bash
 make demo-a  # 1% loss: GBN vs Falcon-style (side-by-side)
 make demo-b  # 40% reordering: spurious retransmissions comparison
@@ -148,38 +147,46 @@ make demo-c  # Path kill mid-transfer with flow rerouting
 make demo-d  # 50-sender incast with backpressure/fairness
 make demos   # All demos at once
 ```
+
 Logs are saved to `results/demo/*.jsonl`. Each run is deterministic.
 
 ### Visualize with the dashboard
+
 ```bash
 make dashboard  # http://localhost:8000/
 ```
+
 Load any JSONL log in the UI: packet ladder, ACK bitmap, connection/flow stats, resource pools, and parameter timeline. Use "side by side" to compare two runs with identical seeds.
 
 ### Run experiments & generate plots
+
 ```bash
 make plots  # loss/reorder/incast/remote_disk/multipath/scheduler/cc_swap/host_congestion
 ls results/*.png
 ```
 
 ### Swap congestion controllers (mechanism unchanged)
+
 ```bash
 make cc-swap  # Swift-style vs AIMD on same scenario
 ```
 
 ### Run tests
+
 ```bash
 make test        # All 109 tests
 make test-fast   # Skip slow tests
 ```
 
 ### Live mode (WebSocket)
+
 ```bash
 make live        # Runs live server on port 8000 (or set LIVE_PORT)
 make live-check  # Smoke test of live endpoints
 ```
 
 ### UDP backend (stretch, Linux + tc)
+
 ```bash
 make netem-demo  # Shows usage for tc netem (requires root)
 # See falcon/udp_demo.py and falcon/net/udp_path.py for example usage
@@ -187,16 +194,16 @@ make netem-demo  # Shows usage for tc netem (requires root)
 
 ## Results
 
-| plot | what it answers |
-|---|---|
-| `loss_sweep.png` | goodput vs drop rate |
-| `reorder_sweep.png`, `reorder_spurious.png` | goodput and wasted retransmits vs reordering |
-| `incast_fairness.png`, `incast_min_sender.png` | how unevenly a shared bottleneck is shared |
-| `remote_disk_completion.png` | whether a lossy path corrupts a block read |
-| `multipath_recovery.png` | what a path failure costs |
-| `scheduler_policy.png` | largest-open-window vs round-robin |
-| `cc_swap_window.png` | Swift-style vs AIMD, same `pdl/` |
-| `host_congestion.png` | ncwnd falling and recovering as the receiver slows |
+| plot                                               | what it answers                                    |
+| -------------------------------------------------- | -------------------------------------------------- |
+| `loss_sweep.png`                                 | goodput vs drop rate                               |
+| `reorder_sweep.png`, `reorder_spurious.png`    | goodput and wasted retransmits vs reordering       |
+| `incast_fairness.png`, `incast_min_sender.png` | how unevenly a shared bottleneck is shared         |
+| `remote_disk_completion.png`                     | whether a lossy path corrupts a block read         |
+| `multipath_recovery.png`                         | what a path failure costs                          |
+| `scheduler_policy.png`                           | largest-open-window vs round-robin                 |
+| `cc_swap_window.png`                             | Swift-style vs AIMD, same`pdl/`                  |
+| `host_congestion.png`                            | ncwnd falling and recovering as the receiver slows |
 
 ## How this is checked
 
@@ -224,8 +231,7 @@ wrong number before it was caught.
 - Not numerically comparable to the paper. Different topology, different constants, simplified CC.
 - Not a performance measurement. Goodput figures come from a discrete-event model with an
   artificial clock; they show behaviour and trends, not achievable link rates.
-- No handshake from the paper, because the paper does not specify one. `SETUP → ESTABLISHED →
-  TEARDOWN` is our own design and is labelled as such.
+- No handshake from the paper, because the paper does not specify one. `SETUP → ESTABLISHED → TEARDOWN` is our own design and is labelled as such.
 
 ## Layout
 
