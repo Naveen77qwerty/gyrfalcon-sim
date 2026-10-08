@@ -4,14 +4,14 @@ from __future__ import annotations
 
 from collections import Counter
 
-from falcon.apps.incast import run_incast
-from falcon.core.sim import Simulator
-from falcon.fae.engine import AimdCc, Fae, SwiftCc
-from falcon.fae.policy import Policy
-from falcon.harness import run_bulk_multipath
-from falcon.metrics import metrics_from_events
-from falcon.net.path import Path
-from falcon.pdl.reliability import FalconStylePdl
+from gyrfalcon.apps.incast import run_incast
+from gyrfalcon.core.sim import Simulator
+from gyrfalcon.fae.engine import AimdCc, Fae, SwiftCc
+from gyrfalcon.fae.policy import Policy
+from gyrfalcon.harness import run_bulk_multipath
+from gyrfalcon.metrics import metrics_from_events
+from gyrfalcon.net.path import Path
+from gyrfalcon.pdl.reliability import FalconStylePdl
 
 
 def _events(sim: Simulator, etype: str) -> list[dict]:
@@ -177,7 +177,7 @@ def test_pdl_holds_no_congestion_policy():
     from pathlib import Path
 
     writes_policy = re.compile(r"\b\w*[Pp]olicy\w*\.\w+\s*=(?!=)")
-    for f in (Path(__file__).resolve().parents[1] / "falcon" / "pdl").rglob("*.py"):
+    for f in (Path(__file__).resolve().parents[1] / "gyrfalcon" / "pdl").rglob("*.py"):
         text = f.read_text()
         assert not writes_policy.search(text), f"{f.name} writes to a Policy"
         for token in ("SwiftCc", "AimdCc", "fae.engine", "fae.policy import Fae"):

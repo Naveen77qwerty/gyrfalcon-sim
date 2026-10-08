@@ -4,10 +4,10 @@ from __future__ import annotations
 
 import math
 
-from falcon.core.sim import Simulator
-from falcon.fae.policy import Policy
-from falcon.net.path import Path
-from falcon.tl.connection import Transaction, TransactionLayer
+from gyrfalcon.core.sim import Simulator
+from gyrfalcon.fae.policy import Policy
+from gyrfalcon.net.path import Path
+from gyrfalcon.tl.connection import Transaction, TransactionLayer
 
 
 def _tl(**kw) -> tuple[Simulator, TransactionLayer, Path, Path]:

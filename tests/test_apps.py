@@ -4,9 +4,9 @@ from __future__ import annotations
 
 import pytest
 
-from falcon.apps.incast import run_incast
-from falcon.apps.remote_disk import BLOCK_BYTES, BlockStore, run_remote_disk
-from falcon.metrics import metrics_from_events
+from gyrfalcon.apps.incast import run_incast
+from gyrfalcon.apps.remote_disk import BLOCK_BYTES, BlockStore, run_remote_disk
+from gyrfalcon.metrics import metrics_from_events
 
 
 def _pattern(lba: int, n: int) -> bytes:

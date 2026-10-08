@@ -1,6 +1,6 @@
-from falcon.core.sim import Simulator
-from falcon.net.packet import Packet
-from falcon.net.path import Path
+from gyrfalcon.core.sim import Simulator
+from gyrfalcon.net.packet import Packet
+from gyrfalcon.net.path import Path
 
 
 def test_path_loss_rate_fixed_seed():

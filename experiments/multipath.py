@@ -15,8 +15,8 @@ sys.path.insert(0, str(ROOT))
 
 from experiments.common import sweep
 
-from falcon.harness import run_bulk_multipath
-from falcon.metrics import metrics_from_events
+from gyrfalcon.harness import run_bulk_multipath
+from gyrfalcon.metrics import metrics_from_events
 
 SEEDS = [5, 6, 7, 8, 9]
 # Inside the transfer's flight window. One RTT is ~100 us, so a later kill finds the transfer

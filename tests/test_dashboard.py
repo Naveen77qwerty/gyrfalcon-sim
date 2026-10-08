@@ -93,7 +93,7 @@ def test_every_element_id_the_script_looks_up_exists_in_the_html():
 
 @requires_node
 def test_dashboard_model_reads_a_real_log(tmp_path):
-    from falcon.apps.incast import run_incast
+    from gyrfalcon.apps.incast import run_incast
 
     log_path = tmp_path / "incast.jsonl"
     run_incast(n_senders=4, seed=1, n_packets=25, until=0.5).bus.write_jsonl(log_path)
@@ -110,7 +110,7 @@ def test_dashboard_model_reads_a_real_log(tmp_path):
 def test_dashboard_does_not_confuse_an_ack_with_a_data_packet(tmp_path):
     """ACKs and data share one PSN space in the log. Matching a drop on PSN alone makes an
     ACK that went missing look like lost application data."""
-    from falcon.harness import run_bulk
+    from gyrfalcon.harness import run_bulk
 
     log_path = tmp_path / "loss.jsonl"
     run_bulk("falcon", seed=11, n_packets=150, loss=0.01, until=2.0).bus.write_jsonl(log_path)
@@ -138,7 +138,7 @@ def _psn_space_collisions(events: list[dict]) -> set[int]:
 def test_dashboard_pairs_each_packet_with_its_own_fate(tmp_path):
     """A retransmission is a new attempt, not a second copy of the first flight. Collapsing
     them makes every recovery look like a first-attempt success."""
-    from falcon.harness import run_bulk
+    from gyrfalcon.harness import run_bulk
 
     log_path = tmp_path / "loss.jsonl"
     run_bulk("falcon", seed=11, n_packets=150, loss=0.01, until=2.0).bus.write_jsonl(log_path)
@@ -180,9 +180,9 @@ def test_every_panel_renders_for_every_demo_log(tmp_path):
     `node --check` only proves the file parses. A wrong variable in a render path leaves a
     blank panel with nothing in the console, which is exactly the failure this catches.
     """
-    from falcon.apps.incast import run_incast
-    from falcon.apps.remote_disk import run_remote_disk
-    from falcon.harness import run_bulk, run_bulk_multipath
+    from gyrfalcon.apps.incast import run_incast
+    from gyrfalcon.apps.remote_disk import run_remote_disk
+    from gyrfalcon.harness import run_bulk, run_bulk_multipath
 
     logs = {}
     for name, sim in [
@@ -213,7 +213,7 @@ def test_every_panel_renders_for_every_demo_log(tmp_path):
 @requires_node
 def test_dashboard_survives_a_log_with_no_events_of_a_kind(tmp_path):
     """The panels must render on a GBN log, which has no FAE and no resource pools."""
-    from falcon.harness import run_bulk
+    from gyrfalcon.harness import run_bulk
 
     log_path = tmp_path / "gbn.jsonl"
     run_bulk("gbn", seed=2, n_packets=30, loss=0.02, until=1.0).bus.write_jsonl(log_path)

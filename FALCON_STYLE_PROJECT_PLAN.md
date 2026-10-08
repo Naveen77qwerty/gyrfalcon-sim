@@ -36,7 +36,7 @@ falcon-style/
     PLAN.md                  # this file
     feature-matrix.md        # paper feature -> section -> implemented/simplified/skipped
     event-schema.md
-  falcon/
+  gyrfalcon/
     core/                    # sim loop, clock, rng, event bus
     net/                     # link/path model: delay, loss, reorder, bandwidth
     baselines/               # go_back_n.py, selective_repeat.py
@@ -90,20 +90,20 @@ falcon-style/
 
 ```
 Read CLAUDE.md and docs/falcon-paper.pdf section 4.1. Create the repo skeleton from the layout in docs/PLAN.md,
-then implement falcon/core: a deterministic discrete-event loop (heap-based), an injectable clock, a seeded RNG
+then implement gyrfalcon/core: a deterministic discrete-event loop (heap-based), an injectable clock, a seeded RNG
 wrapper, and an event bus that appends JSON lines. Add pytest tests proving two runs with the same seed give
 identical logs. No protocol code yet.
 ```
 
 ```
-Implement falcon/net: a Path with one-way delay, jitter, bandwidth serialization, random loss, and reordering
+Implement gyrfalcon/net: a Path with one-way delay, jitter, bandwidth serialization, random loss, and reordering
 (hold-back-and-release). Paths must be killable/slowable at runtime via a method. Emit events for send, drop,
 reorder, deliver. Add tests for loss rate and reorder behavior with fixed seeds.
 ```
 
 ```
-Implement falcon/baselines/go_back_n.py and selective_repeat.py as pure state machines (no I/O, time injected)
-sharing one Sender/Receiver interface. Then implement falcon/pdl reliability per paper section 4.1: PSN, 128-bit
+Implement gyrfalcon/baselines/go_back_n.py and selective_repeat.py as pure state machines (no I/O, time injected)
+sharing one Sender/Receiver interface. Then implement gyrfalcon/pdl reliability per paper section 4.1: PSN, 128-bit
 Rx bitmap on ACKs, receiver accepting OOO packets, sender-side RACK and TLP exactly as described (xmit_ts,
 rack_rto, lowest-unacked probe). Timeouts are constants for now. Add unit tests for each rule.
 ```
@@ -152,21 +152,21 @@ results/. Add an acceptance test asserting Falcon-style beats GBN at 1% loss.
 ### Claude Code prompts
 
 ```
-Read docs/falcon-paper.pdf sections 4.4, 4.5, 4.6 and appendix A. Implement falcon/tl: Push/Pull transactions
+Read docs/falcon-paper.pdf sections 4.4, 4.5, 4.6 and appendix A. Implement gyrfalcon/tl: Push/Pull transactions
 capped at one MTU, RSN assignment, ordered and unordered connection modes, and separate PSN spaces for
 requests and responses per direction. Pure state machine, events for every state change. Add tests for in-order
 delivery under reordering.
 ```
 
 ```
-Implement resource carving in falcon/tl exactly per Figure 6 and section 4.5: Tx/Rx pools, request/response
+Implement resource carving in gyrfalcon/tl exactly per Figure 6 and section 4.5: Tx/Rx pools, request/response
 sub-pools, HoL-only admission to the Rx request pool beyond a threshold, the reserve-use-release lifecycle
 (initiator reserves Tx for the request and Rx for the response), Xon/Xoff to the ULP, and Resource NACKs.
 Write a test scenario that deadlocks when carving is disabled and passes when enabled.
 ```
 
 ```
-Implement falcon/ulp with RDMA-like (WRITE, SEND, READ, ATOMIC) and NVMe-like (Read, Write) ops mapped to
+Implement gyrfalcon/ulp with RDMA-like (WRITE, SEND, READ, ATOMIC) and NVMe-like (Read, Write) ops mapped to
 Push/Pull per Table 2. Then build apps/remote_disk.py: a client doing random 4-16KB reads and 1MB writes to a
 simulated SSD, running over the baselines and over Falcon-style. Verify data integrity under loss and plot
 completion time vs loss rate.
@@ -217,14 +217,14 @@ completion time vs loss rate.
 ### Claude Code prompts
 
 ```
-Read docs/falcon-paper.pdf sections 3.2, 4.2, 4.3 and Table 3. Extend falcon/pdl with flows: per-flow path ID,
+Read docs/falcon-paper.pdf sections 3.2, 4.2, 4.3 and Table 3. Extend gyrfalcon/pdl with flows: per-flow path ID,
 fcwnd, unacked count, shared PSN space and shared Rx bitmap. Implement connection-level gating by
 min(ncwnd, aggregate fcwnd) and flow selection by largest open window. Per-flow RACK-TLP. Add tests for the
 scheduling rule and for correct per-flow ack attribution.
 ```
 
 ```
-Create falcon/fae as a separate module with an event-in / response-out interface only (no direct references to
+Create gyrfalcon/fae as a separate module with an event-in / response-out interface only (no direct references to
 pdl internals). PDL emits events with timestamps t1..t4, buffer occupancy, acked counts; FAE returns fcwnd,
 ncwnd, pacing gap, RTO/RACK/TLP timeouts, path assignments, and dynamic-threshold alpha. Move ALL policy out of
 pdl and tl into fae. Implement a Swift-style delay CC and a second simple AIMD CC behind one interface.

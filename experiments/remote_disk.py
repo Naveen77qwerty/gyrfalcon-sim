@@ -16,7 +16,7 @@ sys.path.insert(0, str(ROOT))
 
 from experiments.common import sweep
 
-from falcon.apps.remote_disk import BLOCK_BYTES, run_remote_disk
+from gyrfalcon.apps.remote_disk import BLOCK_BYTES, run_remote_disk
 
 SEEDS = [3, 4, 5, 6, 7]
 LOSSES = [0.0, 0.001, 0.005, 0.01, 0.03]

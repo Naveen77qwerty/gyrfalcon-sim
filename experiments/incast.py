@@ -16,7 +16,7 @@ sys.path.insert(0, str(ROOT))
 
 from experiments.common import sweep
 
-from falcon.apps.incast import run_incast
+from gyrfalcon.apps.incast import run_incast
 
 SEEDS = [1, 2, 3, 4, 5]
 FANINS = [2, 4, 8, 16, 32]

@@ -55,7 +55,7 @@ must not be described as if it does.
 | NIC hardware, DMA, interrupts | **not implemented** | out of scope for a transport-level study |
 | Live dashboard / chaos UI | **simplified** | `dashboard/` replays a recorded log; WebSocket live mode and side-by-side implemented in code (FastAPI + dashboard) |
 
-| UDP backend (real sockets) | **stretch** | `falcon/net/udp_path.py` provides a UDP-backed Path preserving the same interface; `scripts/netem_demo.sh` and `falcon/udp_demo.py` provided as examples. State machines unchanged. |
+| UDP backend (real sockets) | **stretch** | `gyrfalcon/net/udp_path.py` provides a UDP-backed Path preserving the same interface; `scripts/netem_demo.sh` and `gyrfalcon/udp_demo.py` provided as examples. State machines unchanged. |
 
 ## Known measurement traps
 

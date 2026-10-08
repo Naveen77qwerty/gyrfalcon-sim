@@ -14,8 +14,8 @@ sys.path.insert(0, str(ROOT))
 
 from experiments.common import sweep
 
-from falcon.harness import run_bulk
-from falcon.metrics import metrics_from_events
+from gyrfalcon.harness import run_bulk
+from gyrfalcon.metrics import metrics_from_events
 
 SEEDS = [11, 12, 13, 14, 15]
 

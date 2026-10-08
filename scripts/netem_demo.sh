@@ -20,7 +20,7 @@ echo "To reset: sudo tc qdisc del dev $IFACE root 2>/dev/null || true"
 
 # Example (commented to avoid accidental changes):
 # sudo tc qdisc add dev "$IFACE" root netem loss "$LOSS%" reorder "$REORDER%" delay 1ms
-# ... run UDP transfer using falcon/net/udp_path.py ...
+# ... run UDP transfer using gyrfalcon/net/udp_path.py ...
 # sudo tc qdisc del dev "$IFACE" root
 
 exit 0

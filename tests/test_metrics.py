@@ -7,11 +7,11 @@ out-of-order packets Go-Back-N discards, so goodput scaled with retransmission v
 
 from __future__ import annotations
 
-from falcon.core.clock import Clock
-from falcon.core.event_bus import EventBus
-from falcon.core.sim import Simulator
-from falcon.harness import run_bulk
-from falcon.metrics import metrics_from_events
+from gyrfalcon.core.clock import Clock
+from gyrfalcon.core.event_bus import EventBus
+from gyrfalcon.core.sim import Simulator
+from gyrfalcon.harness import run_bulk
+from gyrfalcon.metrics import metrics_from_events
 
 
 def _recv(t: float, conn: int, psn: int, **kw: object) -> dict:

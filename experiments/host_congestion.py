@@ -20,12 +20,12 @@ import matplotlib.pyplot as plt
 
 from experiments.common import RESULTS
 
-from falcon.core.sim import Simulator
-from falcon.fae.engine import Fae
-from falcon.fae.policy import Policy
-from falcon.metrics import metrics_from_events
-from falcon.net.path import Path as NetPath
-from falcon.pdl.reliability import FalconStylePdl
+from gyrfalcon.core.sim import Simulator
+from gyrfalcon.fae.engine import Fae
+from gyrfalcon.fae.policy import Policy
+from gyrfalcon.metrics import metrics_from_events
+from gyrfalcon.net.path import Path as NetPath
+from gyrfalcon.pdl.reliability import FalconStylePdl
 
 SEEDS = [1, 2, 3, 4, 5]
 

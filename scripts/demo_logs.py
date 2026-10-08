@@ -20,10 +20,10 @@ sys.path.insert(0, str(ROOT))
 
 OUT = ROOT / "results" / "demo"
 
-from falcon.apps.incast import run_incast
-from falcon.apps.remote_disk import run_remote_disk
-from falcon.harness import run_bulk, run_bulk_multipath
-from falcon.metrics import metrics_from_events
+from gyrfalcon.apps.incast import run_incast
+from gyrfalcon.apps.remote_disk import run_remote_disk
+from gyrfalcon.harness import run_bulk, run_bulk_multipath
+from gyrfalcon.metrics import metrics_from_events
 
 
 def _save(sim, name: str) -> Path:

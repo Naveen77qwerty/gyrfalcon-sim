@@ -26,11 +26,11 @@ sys.path.insert(0, str(ROOT))
 
 from experiments.common import sweep
 
-from falcon.core.sim import Simulator
-from falcon.fae.engine import Fae
-from falcon.metrics import metrics_from_events
-from falcon.net.path import Path as NetPath
-from falcon.pdl.reliability import FalconStylePdl
+from gyrfalcon.core.sim import Simulator
+from gyrfalcon.fae.engine import Fae
+from gyrfalcon.metrics import metrics_from_events
+from gyrfalcon.net.path import Path as NetPath
+from gyrfalcon.pdl.reliability import FalconStylePdl
 
 SEEDS = [3, 4, 5, 6, 7]
 ALGOS = ["swift", "aimd"]

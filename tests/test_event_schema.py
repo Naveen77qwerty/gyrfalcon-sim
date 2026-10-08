@@ -79,9 +79,9 @@ def test_schema_matches_the_documented_table():
 def test_every_shipped_scenario_log_validates():
     """A real log against the real schema. Catches an event emitted somewhere the table
     never mentioned, which otherwise shows up as a blank panel much later."""
-    from falcon.apps.incast import run_incast
-    from falcon.apps.remote_disk import run_remote_disk
-    from falcon.harness import run_bulk, run_bulk_multipath
+    from gyrfalcon.apps.incast import run_incast
+    from gyrfalcon.apps.remote_disk import run_remote_disk
+    from gyrfalcon.harness import run_bulk, run_bulk_multipath
 
     logs = [
         run_bulk("falcon", seed=1, n_packets=40, loss=0.01, reorder=0.2, until=0.5).bus.events,
@@ -110,8 +110,8 @@ def test_feature_matrix_covers_every_simplification_claim():
 
 def test_fae_response_carries_the_policy_fields_the_matrix_claims():
     """The matrix advertises fcwnd/ncwnd/pacing/alpha/path assignment on every response."""
-    from falcon.core.sim import Simulator
-    from falcon.fae.engine import Fae
+    from gyrfalcon.core.sim import Simulator
+    from gyrfalcon.fae.engine import Fae
 
     sim = Simulator(seed=1)
     fae = Fae(sim=sim, n_flows=1, conn=1)

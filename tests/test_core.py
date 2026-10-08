@@ -1,6 +1,6 @@
-from falcon.core.sim import Simulator
-from falcon.core.event_bus import EventBus
-from falcon.core.clock import Clock
+from gyrfalcon.core.sim import Simulator
+from gyrfalcon.core.event_bus import EventBus
+from gyrfalcon.core.clock import Clock
 
 
 def test_same_seed_identical_schedule_logs():

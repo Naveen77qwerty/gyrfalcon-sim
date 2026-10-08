@@ -15,9 +15,9 @@ import json
 
 import pytest
 
-from falcon.apps.live import KnobError, LiveRun, knob_defaults, validate_knobs
-from falcon.core.sim import Simulator
-from falcon.harness import build_bulk, run_bulk, run_bulk_multipath
+from gyrfalcon.apps.live import KnobError, LiveRun, knob_defaults, validate_knobs
+from gyrfalcon.core.sim import Simulator
+from gyrfalcon.harness import build_bulk, run_bulk, run_bulk_multipath
 
 IDLE_TIMEOUT = 10.0
 
@@ -322,7 +322,7 @@ def test_the_socket_route_is_not_silently_demoted_to_a_query_param():
     the ASGI app directly is the cheapest way to see it: the first message out must be
     `websocket.accept`, not `websocket.close`.
     """
-    from falcon.apps.live import build_app
+    from gyrfalcon.apps.live import build_app
 
     app = build_app()
     sent: list[dict] = []
@@ -360,7 +360,7 @@ def test_the_socket_route_is_not_silently_demoted_to_a_query_param():
 
 def test_the_static_mount_cannot_shadow_the_socket_route():
     """Routes are matched in declaration order, so `/ws` has to be registered before the mount."""
-    from falcon.apps.live import build_app
+    from gyrfalcon.apps.live import build_app
 
     paths = [getattr(r, "path", None) for r in build_app().routes]
     assert "/ws" in paths, "the websocket route is missing"
@@ -368,7 +368,7 @@ def test_the_static_mount_cannot_shadow_the_socket_route():
 
 
 def test_the_health_route_reports_the_defaults():
-    from falcon.apps.live import build_app
+    from gyrfalcon.apps.live import build_app
 
     app = build_app()
     body: dict = {}

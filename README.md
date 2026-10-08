@@ -76,9 +76,9 @@ Neither mechanism module assigns a policy constant, names a congestion controlle
 a `Policy`. All three come back empty:
 
 ```bash
-grep -rnP '^\s*(fcwnd|ncwnd|rack_rto|tlp_idle)\s*=\s*[0-9]' --include='*.py' falcon/pdl falcon/tl
-grep -rnP 'SwiftCc|AimdCc' --include='*.py' falcon/pdl falcon/tl
-grep -rnP '[Pp]olicy\w*\.\w+\s*=(?!=)' --include='*.py' falcon/pdl falcon/tl
+grep -rnP '^\s*(fcwnd|ncwnd|rack_rto|tlp_idle)\s*=\s*[0-9]' --include='*.py' gyrfalcon/pdl gyrfalcon/tl
+grep -rnP 'SwiftCc|AimdCc' --include='*.py' gyrfalcon/pdl gyrfalcon/tl
+grep -rnP '[Pp]olicy\w*\.\w+\s*=(?!=)' --include='*.py' gyrfalcon/pdl gyrfalcon/tl
 ```
 
 `tests/test_fae.py::test_pdl_holds_no_congestion_policy` asserts exactly this, so it stays true.
@@ -189,7 +189,7 @@ make live-check  # Smoke test of live endpoints
 
 ```bash
 make netem-demo  # Shows usage for tc netem (requires root)
-# See falcon/udp_demo.py and falcon/net/udp_path.py for example usage
+# See gyrfalcon/udp_demo.py and gyrfalcon/net/udp_path.py for example usage
 ```
 
 ## Results
@@ -236,7 +236,7 @@ wrong number before it was caught.
 ## Layout
 
 ```
-falcon/
+gyrfalcon/
   core/     simulator, event bus, logical clock, RNG   (no protocol knowledge)
   net/      impaired path model: delay, loss, reorder, kill, slow
   pdl/      PSN, Rx bitmap, RACK, TLP                 (mechanism only)

@@ -1,6 +1,6 @@
-from falcon.harness import run_bulk
-from falcon.metrics import metrics_from_events
-from falcon.pdl.bitmap import get_bit, set_bit, slide_while_received
+from gyrfalcon.harness import run_bulk
+from gyrfalcon.metrics import metrics_from_events
+from gyrfalcon.pdl.bitmap import get_bit, set_bit, slide_while_received
 
 
 def test_bitmap_update_and_slide():

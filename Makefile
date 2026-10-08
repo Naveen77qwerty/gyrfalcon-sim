@@ -56,11 +56,11 @@ dashboard:
 
 # Live mode runs the simulation in-process and streams it, so it needs the web stack.
 live:
-	$(PY) -m falcon.apps.live --port $(LIVE_PORT)
+	$(PY) -m gyrfalcon.apps.live --port $(LIVE_PORT)
 
 live-check:
-	@$(PY) -m falcon.apps.live --port $(LIVE_PORT) & echo $$! > /tmp/falcon-live.pid; \
-	trap 'kill $$(cat /tmp/falcon-live.pid) 2>/dev/null || true' EXIT; \
+	@$(PY) -m gyrfalcon.apps.live --port $(LIVE_PORT) & echo $$! > /tmp/gyrfalcon-live.pid; \
+	trap 'kill $$(cat /tmp/gyrfalcon-live.pid) 2>/dev/null || true' EXIT; \
 	for i in $$(seq 1 60); do \
 		$(PY) -c "import urllib.request,sys; urllib.request.urlopen('http://127.0.0.1:$(LIVE_PORT)/api/health')" \
 			>/dev/null 2>&1 && break; \
