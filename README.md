@@ -9,6 +9,8 @@ implementation of the same *shape* of design — a mechanism datapath that never
 and a separate engine that sends it events and hands back parameters. Where it simplifies the
 paper, `docs/feature-matrix.md` says so and says why.
 
+<img src="results/shots/side-by-side.png" alt="Dashboard replaying a Go-Back-N run and a Falcon-style run side by side" width="760">
+
 ## Quickstart
 
 ```bash
@@ -194,16 +196,48 @@ make netem-demo  # Shows usage for tc netem (requires root)
 
 ## Results
 
-| plot                                               | what it answers                                    |
-| -------------------------------------------------- | -------------------------------------------------- |
-| `loss_sweep.png`                                 | goodput vs drop rate                               |
-| `reorder_sweep.png`, `reorder_spurious.png`    | goodput and wasted retransmits vs reordering       |
-| `incast_fairness.png`, `incast_min_sender.png` | how unevenly a shared bottleneck is shared         |
-| `remote_disk_completion.png`                     | whether a lossy path corrupts a block read         |
-| `multipath_recovery.png`                         | what a path failure costs                          |
-| `scheduler_policy.png`                           | largest-open-window vs round-robin                 |
-| `cc_swap_window.png`                             | Swift-style vs AIMD, same`pdl/`                  |
-| `host_congestion.png`                            | ncwnd falling and recovering as the receiver slows |
+Every figure is produced by `make plots` and committed next to the code that produced it, so
+the tables above and the plots below come from the same logs.
+
+**Goodput vs drop rate** — what loss costs each transport
+
+![Goodput vs loss](results/loss_sweep.png)
+
+**Goodput vs reordering** — the case the design is actually about
+
+![Goodput vs reordering](results/reorder_sweep.png)
+
+**Wasted (spurious) retransmissions vs reordering**
+
+![Spurious retransmissions vs reordering](results/reorder_spurious.png)
+
+**How unevenly a shared bottleneck is shared** (incast delivery spread)
+
+![Incast fairness](results/incast_fairness.png)
+
+**The worst-served sender in an incast**
+
+![Incast min sender](results/incast_min_sender.png)
+
+**Whether a lossy path corrupts a block read** (remote disk completion)
+
+![Remote disk completion](results/remote_disk_completion.png)
+
+**What a path failure costs** (multipath recovery)
+
+![Multipath recovery](results/multipath_recovery.png)
+
+**Largest-open-window vs round-robin scheduling**
+
+![Scheduler policy](results/scheduler_policy.png)
+
+**Swift-style vs AIMD, same `pdl/`** (CC swap window)
+
+![CC swap window](results/cc_swap_window.png)
+
+**`ncwnd` falling and recovering as the receiver slows**
+
+![Host congestion](results/host_congestion.png)
 
 ## How this is checked
 
