@@ -425,10 +425,11 @@ def build_app():
                 try:
                     msg = json.loads(raw)
                 except json.JSONDecodeError:
-                    await sock.send_text(json.dumps({"ok": False, "error": "bad json"}))
+                    run.queue.put_nowait({"ok": False, "error": "bad json", "_reply": True})
                     continue
                 reply = await run.post(msg)
-                await sock.send_text(json.dumps(reply))
+                reply["_reply"] = True
+                run.queue.put_nowait(reply)
         except WebSocketDisconnect:
             pass
         finally:
