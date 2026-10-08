@@ -27,11 +27,14 @@ make plots         # saves to results/
 # Run all demo scenarios
 make demos         # generates logs in results/demo/
 
-# Launch replay dashboard
-make dashboard     # open http://localhost:8000/
+# Launch replay dashboard (offline logs)
+make dashboard     # open http://localhost:8000/ to replay logs from results/demo/
+
+# Or launch interactive live mode (real-time simulation & chaos sliders)
+make live          # open http://localhost:8811/ and toggle "Live Mode"
 ```
 
-Load any `.jsonl` file from `results/demo/` or `results/` into the dashboard to replay it.
+Load any `.jsonl` file from `results/demo/` or `results/` into the replay dashboard, or use `make live` to control parameters live.
 
 ## What this does
 
@@ -158,39 +161,53 @@ make demos   # All demos at once
 
 Logs are saved to `results/demo/*.jsonl`. Each run is deterministic.
 
-### Visualize with the dashboard
+### Visualize with the Replay Dashboard
 
 ```bash
-make dashboard  # http://localhost:8000/
+make dashboard  # Serves on http://localhost:8000/
 ```
 
-Load any JSONL log in the UI: packet ladder, ACK bitmap, connection/flow stats, resource pools, and parameter timeline. Use "side by side" to compare two runs with identical seeds.
+1. Open **http://localhost:8000/** in your browser.
+2. Click **"Choose Files"** and select one or more `.jsonl` files from `results/demo/` (e.g. `b_reorder_sr.jsonl` and `b_reorder_falcon.jsonl`).
+3. Set the layout dropdown to **"Side by side"** to compare two runs with identical seeds.
+4. Scrub the timeline slider or hit **Play** to inspect the packet ladder, 128-bit ACK bitmap, connection/flow metrics, resource pools, and FAE parameter evolution.
+5. Press `Ctrl+C` in the terminal when finished.
+
+### Interactive Live Mode (Real-Time WebSocket Simulation)
+
+```bash
+make live  # Serves on http://127.0.0.1:8811/ (customizable via LIVE_PORT=<port>)
+```
+
+1. Open **http://127.0.0.1:8811/** in your browser.
+2. Tick the **"Live Mode"** toggle in the header. The status indicator will turn green (`live`) and reveal the live chaos controls.
+3. **Inject network chaos in real time**:
+   - Drag the **Loss** slider to drop packets and watch RACK recover in-flight holes.
+   - Drag the **Slow** slider to increase link delay and observe the FAE throttle `fcwnd` downwards.
+   - Click **Kill Path** to drop a forward path mid-run; observe the FAE rebalance surviving flows with zero packet stalling.
+   - Switch the **Transport** dropdown between `falcon`, `gbn`, and `sr` to watch the simulator reconfigure live.
+4. Press `Ctrl+C` in the terminal when finished. *(If port 8811 is occupied, run `LIVE_PORT=8812 make live` or free the port with `fuser -k 8811/tcp`)*.
 
 ### Run experiments & generate plots
 
 ```bash
-make plots  # loss/reorder/incast/remote_disk/multipath/scheduler/cc_swap/host_congestion
+make plots  # Runs all sweeps: loss, reorder, incast, remote_disk, multipath, scheduler, cc_swap, host_congestion
 ls results/*.png
 ```
 
 ### Swap congestion controllers (mechanism unchanged)
 
 ```bash
-make cc-swap  # Swift-style vs AIMD on same scenario
+make cc-swap  # Compares Swift-style delay CC vs AIMD on the same scenario without modifying pdl/
 ```
 
-### Run tests
+### Run tests & full validation suite
 
 ```bash
-make test        # All 109 tests
-make test-fast   # Skip slow tests
-```
-
-### Live mode (WebSocket)
-
-```bash
-make live        # Runs live server on port 8811 (or set LIVE_PORT)
-make live-check  # Smoke test of live endpoints
+make test        # Run all 109 pytest tests
+make test-fast   # Skip slower tests
+make live-check  # Headless browser smoke test of live WebSocket streaming
+make check       # Full validation: test + demos + headless Chrome render check + live check
 ```
 
 ### UDP backend (stretch, Linux + tc)

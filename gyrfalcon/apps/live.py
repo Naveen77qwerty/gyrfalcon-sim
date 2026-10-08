@@ -453,9 +453,11 @@ def main() -> None:  # pragma: no cover - process entry point
     parser = argparse.ArgumentParser(description="Serve the dashboard in live mode.")
     parser.add_argument("--host", default="127.0.0.1")
     parser.add_argument("--port", type=int, default=8000)
+    parser.add_argument("--log-level", default="info")
     args = parser.parse_args()
 
-    uvicorn.run(build_app(), host=args.host, port=args.port, log_level="warning")
+    print(f"Serving dashboard in live mode on http://{args.host}:{args.port}/ (Press Ctrl+C to stop)")
+    uvicorn.run(build_app(), host=args.host, port=args.port, log_level=args.log_level)
 
 
 if __name__ == "__main__":  # pragma: no cover

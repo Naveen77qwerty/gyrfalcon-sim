@@ -24,45 +24,46 @@ help:
 	@echo "demo_a.sh .. demo_d.sh do the same as the demo-* targets with a pointer to what to look at"
 
 test:
-	$(PY) -m pytest -q -p no:cacheprovider
+	"$(PY)" -m pytest -q -p no:cacheprovider
 
 test-fast:
-	$(PY) -m pytest -q -p no:cacheprovider -m "not slow"
+	"$(PY)" -m pytest -q -p no:cacheprovider -m "not slow"
 
 plots:
 	@for f in loss_sweep reorder_sweep incast remote_disk multipath scheduler_policy cc_swap host_congestion; do \
-		echo "--- $$f"; $(PY) experiments/$$f.py || exit 1; \
+		echo "--- $$f"; "$(PY)" experiments/$$f.py || exit 1; \
 	done
 
 demos:
-	$(PY) scripts/demo_logs.py all
+	"$(PY)" scripts/demo_logs.py all
 
 demo-a:
-	$(PY) scripts/demo_logs.py a
+	"$(PY)" scripts/demo_logs.py a
 
 demo-b:
-	$(PY) scripts/demo_logs.py b
+	"$(PY)" scripts/demo_logs.py b
 
 demo-c:
-	$(PY) scripts/demo_logs.py c
+	"$(PY)" scripts/demo_logs.py c
 
 demo-d:
-	$(PY) scripts/demo_logs.py d
+	"$(PY)" scripts/demo_logs.py d
 
 # The dashboard is plain static files; any server works, and it needs none.
 dashboard:
-	@echo "open http://localhost:8000/ and load logs from $(DEMO)/"
-	@cd dashboard && $(PY) -m http.server 8000
+	@echo "Serving replay dashboard on http://localhost:8000/ (load logs from $(DEMO)/)"
+	@"$(PY)" -m http.server -d dashboard 8000
 
 # Live mode runs the simulation in-process and streams it, so it needs the web stack.
 live:
-	$(PY) -m gyrfalcon.apps.live --port $(LIVE_PORT)
+	@echo "Serving live mode on http://127.0.0.1:$(LIVE_PORT)/ (Press Ctrl+C to stop)"
+	@"$(PY)" -m gyrfalcon.apps.live --port $(LIVE_PORT)
 
 live-check:
-	@$(PY) -m gyrfalcon.apps.live --port $(LIVE_PORT) & echo $$! > /tmp/gyrfalcon-live.pid; \
+	@"$(PY)" -m gyrfalcon.apps.live --port $(LIVE_PORT) & echo $$! > /tmp/gyrfalcon-live.pid; \
 	trap 'kill $$(cat /tmp/gyrfalcon-live.pid) 2>/dev/null || true' EXIT; \
 	for i in $$(seq 1 60); do \
-		$(PY) -c "import urllib.request,sys; urllib.request.urlopen('http://127.0.0.1:$(LIVE_PORT)/api/health')" \
+		"$(PY)" -c "import urllib.request,sys; urllib.request.urlopen('http://127.0.0.1:$(LIVE_PORT)/api/health')" \
 			>/dev/null 2>&1 && break; \
 		sleep 0.5; \
 	done; \
@@ -73,7 +74,7 @@ shots:
 	$(NODE) scripts/render_check.js $(DEMO)/*.jsonl --shots $(SHOTS)
 
 cc-swap:
-	$(PY) experiments/cc_swap.py
+	"$(PY)" experiments/cc_swap.py
 
 check: test demos shots live-check
 
