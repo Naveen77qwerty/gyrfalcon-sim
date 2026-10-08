@@ -44,23 +44,38 @@ def streamed(messages: list[dict]) -> list[dict]:
     return [ev for msg in messages for ev in msg.get("events", [])]
 
 
-async def settle(run, messages, predicate, timeout: float = IDLE_TIMEOUT):
-    """Drain the queue until `predicate(messages)` holds, then keep draining to completion.
+async def settle(run, messages, predicate, timeout: float = IDLE_TIMEOUT,
+                 require_done: bool = False):
+    """Drain the queue until `predicate(messages)` holds.
 
     Waiting on `run.done` alone is not enough after a restart: the previous run already
     reported done, so the wait would return before the rebuild had emitted anything. Waiting on
-    the new run's own reset marker is what actually means "the swap happened".
+    a message only the new run can produce (its reset marker, or an event from its log) is what
+    actually means "the swap happened". `require_done` additionally waits for the run to finish
+    before returning, which the caller wants before asserting on the whole log.
+
+    Everything here is condition-based rather than sleep-based: the driver thread ships events
+    in slices on its own schedule, so any fixed delay is a guess about how far it has got.
     """
     deadline = asyncio.get_running_loop().time() + timeout
     while asyncio.get_running_loop().time() < deadline:
         while not run.queue.empty():
             messages.append(run.queue.get_nowait())
-        if predicate(messages) and run.done:
+        if predicate(messages) and (run.done or not require_done):
             return messages
         await asyncio.sleep(0.02)
     while not run.queue.empty():
         messages.append(run.queue.get_nowait())
     return messages
+
+
+def after_gbn_reset(messages: list[dict]) -> list[dict]:
+    """The events on screen: everything after the newest `transport=gbn` reset marker."""
+    cuts = [i for i, m in enumerate(messages)
+            if m.get("reset") and m["knobs"]["transport"] == "gbn"]
+    if not cuts:
+        return []
+    return streamed(messages[cuts[-1] + 1:])
 
 
 # --------------------------------------------------------------------- equivalence
@@ -259,11 +274,18 @@ def test_switching_transport_rebuilds_the_run():
     async def go():
         run = LiveRun({"n_packets": 60})
         run.start()
-        await asyncio.sleep(0.05)
+        # Swap only once the first run has actually streamed an event. The old fixed
+        # `await asyncio.sleep(0.05)` was a guess about how fast the driver thread starts,
+        # and it made the test race its own setup instead of the behaviour under test.
+        started = await settle(run, [], lambda ms: bool(streamed(ms)))
         reply = await run.post({"cmd": "set", "knob": "transport", "value": "gbn"})
+        # Wait for a pkt_send in the post-reset log itself rather than asserting on whatever
+        # happens to have been drained when the reset marker shows up: the gbn run ships in
+        # slices, so a snapshot taken at the reset can miss the sends that follow it.
         messages = await settle(
-            run, [],
-            lambda ms: any(m.get("reset") and m["knobs"]["transport"] == "gbn" for m in ms),
+            run, started,
+            lambda ms: any(e["type"] == "pkt_send" for e in after_gbn_reset(ms)),
+            require_done=True,
         )
         run.stop()
         return run, reply, messages
@@ -278,7 +300,7 @@ def test_switching_transport_rebuilds_the_run():
     assert cuts, "the swap should have rebuilt the run"
     events = streamed(messages[cuts[-1] + 1:])
     assert run.knobs["transport"] == "gbn"
-    assert [e for e in events if e["type"] == "pkt_send"]
+    assert [e for e in events if e["type"] == "pkt_send"], "the rebuilt run never started sending"
     assert not [e for e in events if e["type"] == "fae_resp"], "GBN has no FAE"
     assert not [e for e in events if e["type"] == "fae_event"], "GBN has no FAE"
 

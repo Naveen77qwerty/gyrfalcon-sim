@@ -28,6 +28,7 @@ Do not add the future import back to this module.
 import asyncio
 import contextlib
 import json
+import threading
 from pathlib import Path as FsPath
 from typing import Any
 
@@ -141,6 +142,11 @@ class LiveRun:
         self.sim: Simulator | None = None
         self.paths: list[Path] = []
         self._shipped = 0
+        # Batches handed to the loop but not yet put on the queue. `_shipped` moves on the
+        # driver thread the instant a batch is scheduled, so without counting the in-flight
+        # ones `done` would report True while the matching messages are still on their way.
+        self._ship_lock = threading.Lock()
+        self._inflight = 0
         self._loop: asyncio.AbstractEventLoop | None = None
         self._thread = None
         self._running = False
@@ -319,12 +325,16 @@ class LiveRun:
 
         Needs both halves: an empty heap means the simulation stopped, but the tail of the log
         may still be sitting unshipped, and reporting completion before that would let a client
-        read a log that is short by up to one slice.
+        read a log that is short by up to one slice. The in-flight count closes the other gap:
+        `_shipped` advances on the driver thread when a batch is *scheduled*, so without it
+        `done` could be True while the batch was still waiting for the loop to put it on the
+        queue -- a consumer draining on `done` would then see a log missing its last slices.
         """
         return (
             self.sim is not None
             and self.sim.finished
             and self._shipped >= len(self.sim.bus.events)
+            and self._inflight == 0
         )
 
     def _flush(self) -> None:
@@ -343,14 +353,25 @@ class LiveRun:
         if self._shipped >= len(events):
             return
         batch = events[self._shipped:self._shipped + FLUSH_EVENTS]
-        self._shipped += len(batch)
+        # Schedule before advancing `_shipped`: `done` must never see a fully shipped run
+        # whose last batch is still in flight.
         self._emit({"events": batch, "knobs": dict(self.knobs),
                     "transport": self.knobs["transport"]})
+        self._shipped += len(batch)
 
     def _emit(self, payload: dict[str, Any]) -> None:
         loop = self._loop
-        if loop is not None and not loop.is_closed():
-            loop.call_soon_threadsafe(self.queue.put_nowait, payload)
+        if loop is None or loop.is_closed():
+            return
+        with self._ship_lock:
+            self._inflight += 1
+
+        def deliver() -> None:
+            self.queue.put_nowait(payload)
+            with self._ship_lock:
+                self._inflight -= 1
+
+        loop.call_soon_threadsafe(deliver)
 
     def _reply(self, fut: asyncio.Future, payload: dict[str, Any]) -> None:
         loop = self._loop
