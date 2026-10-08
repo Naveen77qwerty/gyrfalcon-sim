@@ -290,3 +290,7 @@ docs/       event schema, feature matrix, plan
 
 Python 3.11+. `matplotlib` for plots. Node and a Chrome/Chromium binary are optional and only
 used by the dashboard render check, which skips cleanly without them.
+
+## License
+
+MIT — see [LICENSE](LICENSE).
