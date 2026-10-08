@@ -29,6 +29,7 @@ import asyncio
 import contextlib
 import json
 import threading
+import time
 from pathlib import Path as FsPath
 from typing import Any
 
@@ -162,7 +163,7 @@ class LiveRun:
                 seed=k["seed"],
                 n_packets=k["n_packets"],
                 n_paths=k["n_paths"],
-                n_flows=min(k["n_flows"], k["n_paths"]),
+                n_flows=k["n_flows"],
                 loss=k["loss"],
                 reorder=k["reorder"],
                 algo=k["algo"],
@@ -246,6 +247,10 @@ class LiveRun:
                 # a log that is short by up to one slice. Then keep serving commands so the
                 # client can still retune and ask for a restart.
                 self._flush()
+                # Yield the CPU instead of spinning. The sleep is short enough that commands
+                # remain responsive; without it this thread pins a core at 100% for the
+                # entire time the client is idle after a run finishes.
+                time.sleep(0.01)
                 continue
             self._flush()
 
@@ -422,7 +427,8 @@ def build_app():
                 except json.JSONDecodeError:
                     await sock.send_text(json.dumps({"ok": False, "error": "bad json"}))
                     continue
-                await run.post(msg)
+                reply = await run.post(msg)
+                await sock.send_text(json.dumps(reply))
         except WebSocketDisconnect:
             pass
         finally:
