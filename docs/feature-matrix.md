@@ -1,6 +1,8 @@
 # Feature matrix
 
-What this simulator implements from `docs/falcon-paper.pdf`, and — more importantly — where it
+What this simulator implements from the Falcon paper (SIGCOMM 2025, DOI in the README; the PDF
+is not committed — download it to `docs/falcon-paper.pdf` if you want to cite sections), and —
+more importantly — where it
 simplifies. Anything marked **simplified** is a deliberate reduction, not an oversight, and the
 reason is given so a reader can tell the difference without reading the code.
 

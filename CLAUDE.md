@@ -1,5 +1,6 @@
 # Project rules
-- This is a Falcon-style transport (SIGCOMM 2025 paper in docs/). Never call it "Falcon" or claim parity with
+- This is a Falcon-style transport (SIGCOMM 2025 paper; DOI in README — the PDF is not committed,
+  download it to docs/falcon-paper.pdf locally to cite sections). Never call it "Falcon" or claim parity with
   the paper's numbers.
 - Protocol code (core logic in pdl/, tl/, fae/, baselines/) is pure: no I/O, no wall-clock, no global RNG. Time
   and RNG are injected.

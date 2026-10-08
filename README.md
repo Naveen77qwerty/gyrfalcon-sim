@@ -35,14 +35,18 @@ Load any `.jsonl` file from `results/demo/` or `results/` into the dashboard to 
 
 ## What this does
 
-This is a discrete-event simulator of a Falcon-style reliable transport. It models an impaired network (delay, loss, reordering, bandwidth, path failures) and compares transports (Go-Back-N, Selective Repeat, Falcon-style). Key features:
+A discrete-event simulator of a Falcon-style reliable transport: it models an impaired network
+(delay, loss, reordering, bandwidth, path failures) and compares Go-Back-N, Selective Repeat and
+Falcon-style over it.
 
-- **Pure mechanism vs policy split**: Protocol logic in `pdl/` and `tl/` never hardcodes congestion control, timeouts, or scheduling — all policy decisions come from `fae/` via injected `Policy` objects.
-- **Deterministic & replayable**: Same seed produces identical event logs (JSONL). Every measurement comes from replayable logs.
-- **Full observability**: Every state change emits a schema-conformant event (`docs/event-schema.md`). The dashboard replays these logs to visualize packet flows, losses, retransmissions, RACK/TLP firing, ACK bitmaps, resource pools, and FAE parameter changes.
-- **Multipath + CC swap**: Flows share PSN space with per-flow windows; you can swap congestion controllers (Swift-style vs AIMD) without touching mechanism code.
-- **Realistic workloads**: Includes bulk transfer, remote disk (4-16 KB reads, multi-chunk writes with integrity checks), and incast scenarios.
-- **Tested & reproducible**: 109 tests validate metrics semantics, event schema, mechanism/policy split, resource carving, and dashboard replay. Demos generate seeded logs for consistent presentations.
+- **Mechanism vs policy split**: `pdl/` and `tl/` never hardcode congestion control, timeouts or
+  scheduling — every decision arrives from `fae/` through an injected `Policy`.
+- **Deterministic & observable**: same seed, byte-identical JSONL logs; every state change
+  emits a schema event (`docs/event-schema.md`) that the dashboard replays.
+- **Workloads**: bulk transfer, remote disk, incast and multipath, with congestion-controller
+  swap (Swift-style vs AIMD) that never touches mechanism code.
+- **Tested**: `make test` covers metrics semantics, the event schema, the mechanism/policy split
+  and dashboard replay.
 
 ## The one idea worth stealing
 
@@ -107,6 +111,8 @@ window and come out identical, which is why the scenario slows the path.
 
 From `make plots`, over five seeds with 95% confidence intervals. Simulator figures on a
 simplified topology; useful for showing a *trend*, not for comparison with anything published.
+The tables below quote the demo runs — `make demo-a` (seed 21) and `make demo-b` (seed 13) —
+whose logs sit in `results/demo/` and can be replayed yourself.
 
 At 1% loss, 200 packets (`results/loss_sweep.png`):
 
@@ -183,7 +189,7 @@ make test-fast   # Skip slow tests
 ### Live mode (WebSocket)
 
 ```bash
-make live        # Runs live server on port 8000 (or set LIVE_PORT)
+make live        # Runs live server on port 8811 (or set LIVE_PORT)
 make live-check  # Smoke test of live endpoints
 ```
 
@@ -290,6 +296,14 @@ docs/       event schema, feature matrix, plan
 
 Python 3.11+. `matplotlib` for plots. Node and a Chrome/Chromium binary are optional and only
 used by the dashboard render check, which skips cleanly without them.
+
+## Paper
+
+*Falcon: A Reliable, Low Latency Hardware Transport* (SIGCOMM 2025): https://doi.org/10.1145/3718958.3754353
+
+The PDF is not committed to this repo. Download it to `docs/falcon-paper.pdf` (gitignored)
+locally if you want to cite sections; `docs/PLAN.md` and `docs/feature-matrix.md` refer to that
+path.
 
 ## License
 

@@ -10,3 +10,5 @@ build/
 htmlcov/
 results/*.jsonl
 !results/.gitkeep
+# The Falcon paper PDF is not committed; download it here locally (see README "Paper").
+docs/falcon-paper.pdf

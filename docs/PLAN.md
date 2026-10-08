@@ -15,7 +15,7 @@ A feature-level implementation of the ideas in *Falcon: A Reliable, Low Latency 
 | Visualizer             | Static HTML/JS replaying a JSONL event log; later a WebSocket "live mode" | Replay first means the dashboard never couples to protocol code    |
 | Live backend (Phase 4) | FastAPI + WebSocket                                                       | Needed for the chaos sliders                                       |
 | Tests                  | pytest                                                                    | Every phase has acceptance tests                                   |
-| Paper in repo          | `docs/falcon-paper.pdf`                                                 | Lets Claude Code cite section numbers                              |
+| Paper                   | [Falcon (SIGCOMM 2025)](https://doi.org/10.1145/3718958.3754353); the PDF is not committed — download it to `docs/falcon-paper.pdf` (gitignored) | Lets Claude Code cite section numbers                              |
 
 **If you'd rather use Go or Rust:** the plan is identical, but expect roughly 2x the build time. Python is the realistic choice for the deadline.
 
@@ -32,7 +32,7 @@ A feature-level implementation of the ideas in *Falcon: A Reliable, Low Latency 
 falcon-style/
   CLAUDE.md                  # rules for Claude Code (see section 7)
   docs/
-    falcon-paper.pdf
+    falcon-paper.pdf        # downloaded locally, gitignored (DOI in README)
     PLAN.md                  # this file
     feature-matrix.md        # paper feature -> section -> implemented/simplified/skipped
     event-schema.md
@@ -89,7 +89,8 @@ falcon-style/
 ### Claude Code prompts
 
 ```
-Read CLAUDE.md and docs/falcon-paper.pdf section 4.1. Create the repo skeleton from the layout in docs/PLAN.md,
+Read CLAUDE.md and docs/falcon-paper.pdf (download it locally first; DOI in README)
+section 4.1. Create the repo skeleton from the layout in docs/PLAN.md,
 then implement gyrfalcon/core: a deterministic discrete-event loop (heap-based), an injectable clock, a seeded RNG
 wrapper, and an event bus that appends JSON lines. Add pytest tests proving two runs with the same seed give
 identical logs. No protocol code yet.
@@ -152,7 +153,8 @@ results/. Add an acceptance test asserting Falcon-style beats GBN at 1% loss.
 ### Claude Code prompts
 
 ```
-Read docs/falcon-paper.pdf sections 4.4, 4.5, 4.6 and appendix A. Implement gyrfalcon/tl: Push/Pull transactions
+Read docs/falcon-paper.pdf (download it locally first; DOI in README) sections 4.4, 4.5,
+4.6 and appendix A. Implement gyrfalcon/tl: Push/Pull transactions
 capped at one MTU, RSN assignment, ordered and unordered connection modes, and separate PSN spaces for
 requests and responses per direction. Pure state machine, events for every state change. Add tests for in-order
 delivery under reordering.
@@ -217,7 +219,8 @@ completion time vs loss rate.
 ### Claude Code prompts
 
 ```
-Read docs/falcon-paper.pdf sections 3.2, 4.2, 4.3 and Table 3. Extend gyrfalcon/pdl with flows: per-flow path ID,
+Read docs/falcon-paper.pdf (download it locally first; DOI in README) sections 3.2, 4.2,
+4.3 and Table 3. Extend gyrfalcon/pdl with flows: per-flow path ID,
 fcwnd, unacked count, shared PSN space and shared Rx bitmap. Implement connection-level gating by
 min(ncwnd, aggregate fcwnd) and flow selection by largest open window. Per-flow RACK-TLP. Add tests for the
 scheduling rule and for correct per-flow ack attribution.
